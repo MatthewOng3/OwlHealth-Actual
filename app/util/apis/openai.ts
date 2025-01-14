@@ -9,12 +9,13 @@ export async function summariseConsultation(prompt: string){
         });
         
         const data = await res.json();
+
         if (data.error) {
           return (`Error: ${data.error}`);
         } else {
           return (data.text);  
         }
       } catch (error) {
-        return ('Error occurred during API call');
+        return (`Error occurred during API call: ${error}`);
       } 
 }
