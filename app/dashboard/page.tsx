@@ -1,296 +1,133 @@
 'use client'
+import { Box, Card, CardContent, TextField, Typography } from "@mui/material";
+import ButtonStates from "@/app/ui/buttons/button-states";
+import { useEffect, useRef, useState } from "react";
 
-import * as React from 'react';
-import { styled, useTheme, Theme, CSSObject } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import MuiDrawer from '@mui/material/Drawer';
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import List from '@mui/material/List';
-import CssBaseline from '@mui/material/CssBaseline';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import TranscribeIcon from '@mui/icons-material/Transcribe';
-import WidgetsIcon from '@mui/icons-material/Widgets';
+import { Grid2 } from '@mui/material';
+//Icons
+import GraphicEqIcon from '@mui/icons-material/GraphicEq';
+import MicIcon from '@mui/icons-material/Mic';
+import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import React from "react";
+import NotePad from "../ui/buttons/notepad";
+import Timer from "../components/timer-display";
+import { useTimer } from "../util/timer";
+import { summariseConsultation } from "../util/apis/openai";
 
-const drawerWidth = 240;
+export default function Page() {
+	const [loading, setLoading] = useState(false);
+	const [isRecording, setIsRecording] = useState(false);
+	const [isPaused, setIsPaused] = useState(false);
+	const [error, setError] = useState('');
+	const [transcription, setTranscription] = useState('');
+	const [notes,setNotes] = useState<string[]>([]);
+	const recognitionRef = useRef(null);
+	const { seconds, startTimer, stopTimer, pauseTimer, resumeTimer } = useTimer();
 
-const openedMixin = (theme: Theme): CSSObject => ({
-  width: drawerWidth,
-  transition: theme.transitions.create('width', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen,
-  }),
-  overflowX: 'hidden',
-});
+	console.log(transcription, "TRANSCRIPTION")
 
-const closedMixin = (theme: Theme): CSSObject => ({
-  transition: theme.transitions.create('width', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  overflowX: 'hidden',
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up('sm')]: {
-    width: `calc(${theme.spacing(8)} + 1px)`,
-  },
-});
+	async function stopRecording(){
+		recognitionRef.current.stop();
+		setIsRecording(false)
+		setIsPaused(false)
+		stopTimer();
 
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-}));
+		const res = await summariseConsultation(notes.concat(transcription).join(' '));
+		console.log(res)
+	}
 
-interface AppBarProps extends MuiAppBarProps {
-  open?: boolean;
-}
+	function startRecording(){
+		setTranscription("");
+		setIsRecording(true);
+		startTimer();
+		recognitionRef.current.start();
+	}
 
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})<AppBarProps>(({ theme }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(['width', 'margin'], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  variants: [
-    {
-      props: ({ open }) => open,
-      style: {
-        marginLeft: drawerWidth,
-        width: `calc(100% - ${drawerWidth}px)`,
-        transition: theme.transitions.create(['width', 'margin'], {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
-      },
-    },
-  ],
-}));
+	function pauseRecording(){
+		setIsPaused(true)
+		pauseTimer();
+		recognitionRef.current.stop();
+		
+	}
 
-const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
-  ({ theme }) => ({
-    width: drawerWidth,
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-    boxSizing: 'border-box',
-    variants: [
-      {
-        props: ({ open }) => open,
-        style: {
-          ...openedMixin(theme),
-          '& .MuiDrawer-paper': openedMixin(theme),
-        },
-      },
-      {
-        props: ({ open }) => !open,
-        style: {
-          ...closedMixin(theme),
-          '& .MuiDrawer-paper': closedMixin(theme),
-        },
-      },
-    ],
-  }),
-);
+	function resumeRecording(){
+		setIsPaused(false)
+		resumeTimer();
+		recognitionRef.current.start();
+	}
 
-const DrawerIcons = [{
-    title: 'Scribe',
-    icon: <TranscribeIcon/>
-},
-{
-    title: 'Templates',
-    icon: <WidgetsIcon/>
-}]
+	
+	useEffect(() => {
+	  // Initialize Speech Recognition
+	  const SpeechRecognition =
+		window.SpeechRecognition || window.webkitSpeechRecognition;
+		
+	  if (!SpeechRecognition) {
+		alert("Speech Recognition is not supported in your browser.");
+		return;
+	  }
+  
+	  const recognition = new SpeechRecognition();
+	  recognition.continuous = true; // Keep listening until stopped
+	  recognition.interimResults = true; // Show partial results
+	  recognition.lang = "en-US"; // Language setting
+  
+	  // Capture Speech Results
+	  recognition.onresult = (event) => {
+		let interimTranscript = "";
+		for (let i = event.resultIndex; i < event.results.length; i++) {
+		  const transcript = event.results[i][0].transcript;
 
-export default function MiniDrawer() {
-    const theme = useTheme();
-    const [open, setOpen] = React.useState(false);
+		  if (event.results[i].isFinal) {
+			setTranscription((prev) => prev + transcript + " "); // Add final text
+		  } else {
+			interimTranscript += transcript; // Show interim results
+		  }
+		}
+	  };
+  
+	  // Error Handling
+	  recognition.onerror = (event) => console.error("Speech Recognition Error: ", event.error);
+	  recognitionRef.current = recognition;
+  
+	  return () => recognition.stop();  
+	}, []);
+  
 
-    const handleDrawerOpen = () => {
-        setOpen(true);
-    };
+	return (
+		<main className="flex min-h-screen flex-col p-6 bg-gray-200">
+			<Box sx={{display: 'flex', flexDirection: 'column', height: '100%', gap: 2}}>
+				<Box sx={{display: 'flex', gap: 3, flexDirection: 'row'}}>
+					{
+						isRecording &&
+						<ButtonStates 
+						activeButtonProps={{color:'primary', variant:'outlined', text: 'Resume Recording',icon: <PlayArrowIcon/>, onClickFunc: resumeRecording}}
+						defaultButtonProps={{color:'primary', variant:'outlined', text: 'Pause Recording',icon: <PauseIcon/>, onClickFunc: pauseRecording}}
+						state={isPaused}/>
+					}
+					
+					<ButtonStates 
+					activeButtonProps={{color:'success', variant:'contained', text: 'Stop Recording',icon: <GraphicEqIcon/>,onClickFunc: stopRecording}}
+					defaultButtonProps={{color:'primary', variant:'contained', text: 'Start Recording',icon: <MicIcon/>,onClickFunc: startRecording}}
+					state={isRecording}/>
 
-    const handleDrawerClose = () => {
-        setOpen(false);
-    };
+					<Timer seconds={seconds} />
+				</Box>
 
-  return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar position="fixed" open={open}>
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={[
-              {
-                marginRight: 5,
-              },
-              open && { display: 'none' },
-            ]}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Mini variant drawer
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          {DrawerIcons.map((text, index) => (
-            <ListItem key={index} disablePadding sx={{ display: 'block' }}>
-              <ListItemButton
-                sx={[
-                  {
-                    minHeight: 48,
-                    px: 2.5,
-                  },
-                  open
-                    ? {
-                        justifyContent: 'initial',
-                      }
-                    : {
-                        justifyContent: 'center',
-                      },
-                ]}
-              >
-                <ListItemIcon
-                  sx={[
-                    {
-                      minWidth: 0,
-                      justifyContent: 'center',
-                    },
-                    open
-                      ? {
-                          mr: 3,
-                        }
-                      : {
-                          mr: 'auto',
-                        },
-                  ]}
-                >
-                  {text.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={text.title}
-                  sx={[
-                    open
-                      ? {
-                          opacity: 1,
-                        }
-                      : {
-                          opacity: 0,
-                        },
-                  ]}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        {/* <Divider />
-        <List>
-          {['All mail', 'Trash', 'Spam'].map((text, index) => (
-            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
-              <ListItemButton
-                sx={[
-                  {
-                    minHeight: 48,
-                    px: 2.5,
-                  },
-                  open
-                    ? {
-                        justifyContent: 'initial',
-                      }
-                    : {
-                        justifyContent: 'center',
-                      },
-                ]}
-              >
-                <ListItemIcon
-                  sx={[
-                    {
-                      minWidth: 0,
-                      justifyContent: 'center',
-                    },
-                    open
-                      ? {
-                          mr: 3,
-                        }
-                      : {
-                          mr: 'auto',
-                        },
-                  ]}
-                >
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                <ListItemText
-                  primary={text}
-                  sx={[
-                    open
-                      ? {
-                          opacity: 1,
-                        }
-                      : {
-                          opacity: 0,
-                        },
-                  ]}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List> */}
-      </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <DrawerHeader />
-        <Typography sx={{ marginBottom: 2 }}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-          tempor incididunt ut labore et dolore magna aliqua. Rhoncus dolor purus non
-          enim praesent elementum facilisis leo vel. Risus at ultrices mi tempus
-          imperdiet. Semper risus in hendrerit gravida rutrum quisque non tellus.
-          Convallis convallis tellus id interdum velit laoreet id donec ultrices.
-          Odio morbi quis commodo odio aenean sed adipiscing. Amet nisl suscipit
-          adipiscing bibendum est ultricies integer quis. Cursus euismod quis viverra
-          nibh cras. Metus vulputate eu scelerisque felis imperdiet proin fermentum
-          leo. Mauris commodo quis imperdiet massa tincidunt. Cras tincidunt lobortis
-          feugiat vivamus at augue. At augue eget arcu dictum varius duis at
-          consectetur lorem. Velit sed ullamcorper morbi tincidunt. Lorem donec massa
-          sapien faucibus et molestie ac.
-        </Typography>
-        <Typography sx={{ marginBottom: 2 }}>
-          Consequat mauris nunc congue nisi vitae suscipit. Fringilla est ullamcorper
-          eget nulla facilisi etiam dignissim diam. Pulvinar elementum integer enim
-          neque volutpat ac tincidunt. Ornare suspendisse sed nisi lacus sed viverra
-          tellus. Purus sit amet volutpat consequat mauris. Elementum eu facilisis
-          sed odio morbi. Euismod lacinia at quis risus sed vulputate odio. Morbi
-          tincidunt ornare massa eget egestas purus viverra accumsan in. In hendrerit
-          gravida rutrum quisque non tellus orci ac. Pellentesque nec nam aliquam sem
-          et tortor. Habitant morbi tristique senectus et. Adipiscing elit duis
-          tristique sollicitudin nibh sit. Ornare aenean euismod elementum nisi quis
-          eleifend. Commodo viverra maecenas accumsan lacus vel facilisis. Nulla
-          posuere sollicitudin aliquam ultrices sagittis orci a.
-        </Typography>
-      </Box>
-    </Box>
-  );
+				
+				<Grid2 container sx={{ }}>
+					<Grid2 size={{xs: 12, sm: 4, md: 4}}>
+						<NotePad setState={setNotes}/>
+					</Grid2>
+					 
+				</Grid2>
+				
+
+				 
+
+			</Box>
+			
+		</main>
+	);
 }
