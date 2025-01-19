@@ -48,7 +48,6 @@ export default function Page() {
 		setIsPaused(true)
 		pauseTimer();
 		recognitionRef.current.stop();
-		
 	}
 
 	function resumeRecording(){
@@ -96,7 +95,7 @@ export default function Page() {
   
 
 	return (
-		<main className="flex min-h-screen flex-col p-6 bg-gray-200">
+		<main className="flex min-h-screen flex-col p-6">
 			<Box sx={{display: 'flex', flexDirection: 'column', height: '100%', gap: 2}}>
 				<Box sx={{display: 'flex', gap: 3, flexDirection: 'row'}}>
 					{

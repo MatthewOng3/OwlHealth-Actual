@@ -1,0 +1,24 @@
+'use client'
+import { useRef } from 'react'
+import { Provider } from 'react-redux'
+import { makeStore, AppStore } from '@/lib/store/store'
+
+/**
+ * 
+ * @description Ensures store is only created once, will only be rendered once per request on server.
+ * @returns 
+ */
+export default function StoreProvider({
+  children
+}: {
+  children: React.ReactNode
+}) {
+    //Ensures store is only created once
+  const storeRef = useRef<AppStore | null>(null)
+  if (!storeRef.current) {
+    // Create the store instance the first time this renders
+    storeRef.current = makeStore()
+  }
+
+  return <Provider store={storeRef.current}>{children}</Provider>
+}

@@ -14,18 +14,19 @@ import IconButton from '@mui/material/IconButton';
 
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import TranscribeIcon from '@mui/icons-material/Transcribe';
-import WidgetsIcon from '@mui/icons-material/Widgets';
+import { DrawerButtons } from '../util/types/component-types';
+import { useRouter } from 'next/navigation'
+import { COLORS, DRAWER_WIDTH } from '../util/constants/app-dimensions';
 
-const drawerWidth = 240;
-
+ 
 const openedMixin = (theme: Theme): CSSObject => ({
-  width: drawerWidth,
+  width: DRAWER_WIDTH,
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: 'hidden',
+  backgroundColor: COLORS.lightgreen400
 });
 
 const closedMixin = (theme: Theme): CSSObject => ({
@@ -34,6 +35,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: 'hidden',
+  backgroundColor: COLORS.lightgreen400,
   //Shrinks drawer based on theme spacing system
   width: `calc(${theme.spacing(7)} + 1px)`,
   [theme.breakpoints.up('sm')]: {
@@ -53,7 +55,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 //Custom styled MUI component with variants of styles depending on state
 const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
     ({ theme }) => ({
-        width: drawerWidth,
+        width: DRAWER_WIDTH,
         flexShrink: 0,
         whiteSpace: 'nowrap',
         boxSizing: 'border-box',
@@ -77,19 +79,13 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
     }),
 );
   
-const DrawerIcons = [{
-    title: 'Scribe',
-    icon: <TranscribeIcon/>
-},
-{
-    title: 'Templates',
-    icon: <WidgetsIcon/>
-}]
-  
+
+ 
 
 type SideDrawerProps = {
-    setOpen: (state: boolean) => void;
+    set_open: (state: boolean) => void;
     open: boolean;
+    drawer_buttons: DrawerButtons[]
 }
 
 /**
@@ -97,26 +93,32 @@ type SideDrawerProps = {
  * @param 
  * @returns 
  */
-function SideDrawer({setOpen, open}: SideDrawerProps){
-
+function SideDrawer({set_open, open, drawer_buttons}: SideDrawerProps){
+    const router = useRouter();
     const theme = useTheme();
 
     const handleDrawerClose = () => {
-        setOpen(false);
+        set_open(false);
     };
+
+    function handleIconClick(path: string){
+        router.push(path)
+    }
 
     return (
         <Drawer variant="permanent" open={open}>
             <DrawerHeader>
-                
                 <IconButton onClick={handleDrawerClose}>
                     {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
                 </IconButton>
             </DrawerHeader>
+            
             <Divider />
-            <List>
-            {DrawerIcons.map((text, index) => (
+
+            <List sx={{}}>
+            {drawer_buttons.map((text, index) => (
                 <ListItem key={index} disablePadding sx={{ display: 'block' }}>
+
                 <ListItemButton
                     sx={[
                     {
@@ -131,6 +133,7 @@ function SideDrawer({setOpen, open}: SideDrawerProps){
                             justifyContent: 'center',
                         },
                     ]}
+                    onClick={() => handleIconClick(text.page)}
                 >
                     <ListItemIcon
                     sx={[
@@ -149,6 +152,7 @@ function SideDrawer({setOpen, open}: SideDrawerProps){
                     >
                     {text.icon}
                     </ListItemIcon>
+                    
                     <ListItemText
                     primary={text.title}
                     sx={[

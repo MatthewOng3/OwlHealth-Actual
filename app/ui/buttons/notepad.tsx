@@ -2,6 +2,7 @@
 import { Box, Button, Card, CardContent, IconButton, List, ListItem, ListItemText, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import SendIcon from '@mui/icons-material/Send';
+import { COLORS } from "@/app/util/constants/app-dimensions";
 
 type Props = {
     setState: (input: string[]) => void;
@@ -24,6 +25,7 @@ function NotePad({setState}: Props){
         setState([...notes, inputText])
         setInputText("");  
     }
+    
 
   return (
     <Box
@@ -31,8 +33,8 @@ function NotePad({setState}: Props){
         display: "flex",
         height: 600,  
         borderWidth: 1,
-        borderRadius: 2,
-        borderColor: "black",
+        borderRadius: 3,
+        borderColor: COLORS.green100,
         width: "100%", 
       }}
     >

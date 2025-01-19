@@ -5,10 +5,25 @@ import React from 'react';
 import { Box, CssBaseline, IconButton, Toolbar, Typography } from '@mui/material';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import SideDrawer from "../components/side-drawer";
-import { DRAWER_WIDTH } from "../util/constants/app-dimensions";
+import { COLORS, DRAWER_WIDTH } from "../util/constants/app-dimensions";
+
+//Icons
 import MenuIcon from '@mui/icons-material/Menu';
+import TranscribeIcon from '@mui/icons-material/Transcribe';
+import WidgetsIcon from '@mui/icons-material/Widgets';
+import { DrawerButtons } from '../util/types/component-types';
 
-
+export const drawer_icons: DrawerButtons[] = [{
+    title: 'Scribe',
+    icon: <TranscribeIcon/>,
+    page: '/dashboard'
+},
+{
+    title: 'Templates',
+    icon: <WidgetsIcon/>,
+    page:  '/dashboard/templates'
+}]
+  
  
 interface AppBarProps extends MuiAppBarProps {
   open?: boolean;
@@ -22,7 +37,7 @@ const AppBar = styled(MuiAppBar, {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
-  backgroundColor: 'green',
+  backgroundColor: COLORS.green100,
   variants: [
     {
       props: ({ open }) => open,
@@ -45,13 +60,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const [open, setOpen] = React.useState(false);
-
   const handleDrawerOpen = () => setOpen(true);
-  const handleDrawerClose = () => setOpen(false);
-
+   
   return (
     <Box sx={{ display: 'flex' }}>
-        <CssBaseline />
+      <CssBaseline />
       <AppBar position="fixed" open={open}>
         <Toolbar>
           <IconButton
@@ -68,16 +81,18 @@ export default function DashboardLayout({
           >
             <MenuIcon />
           </IconButton>
+          
           <Typography variant="h6" noWrap component="div">
             Owl Health
           </Typography>
         </Toolbar>
       </AppBar>
 
-        <SideDrawer open={open} setOpen={setOpen} /> 
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Toolbar /> {/* Spacer for AppBar */}
-        {children}
+        <SideDrawer open={open} set_open={setOpen} drawer_buttons={drawer_icons}/> 
+              
+        <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: COLORS.lightgreen200 }}>
+          <Toolbar /> {/* Spacer for AppBar */}
+          {children}
         </Box>
     </Box>
   );

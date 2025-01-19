@@ -17,7 +17,6 @@ import SideDrawer from './components/side-drawer';
 const drawerWidth = 240;
 
 
-
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -90,8 +89,7 @@ export default function Dashboard() {
         </Toolbar>
       </AppBar>
 
-      <SideDrawer open={open} setOpen={setOpen}/>
-
+   
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <DrawerHeader />
         <Typography sx={{ marginBottom: 2 }}>
